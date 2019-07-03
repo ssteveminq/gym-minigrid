@@ -20,6 +20,8 @@ def main():
         default='MiniGrid-MultiRoom-N6-v0'
     )
     (options, args) = parser.parse_args()
+    print("options")
+    print(options)
 
     # Load the gym environment
     env = gym.make(options.env_name)
@@ -44,12 +46,16 @@ def main():
 
         action = 0
 
+        print(keyName)
+
         if keyName == 'LEFT':
             action = env.actions.left
         elif keyName == 'RIGHT':
             action = env.actions.right
         elif keyName == 'UP':
             action = env.actions.forward
+        elif keyName == 'HOME':
+            action = env.actions.pickup
 
         elif keyName == 'SPACE':
             action = env.actions.toggle

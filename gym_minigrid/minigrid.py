@@ -4,6 +4,10 @@ from enum import IntEnum
 import numpy as np
 from gym import error, spaces, utils
 from gym.utils import seeding
+from operator import add
+
+
+# from gym_minigrid.rendering import Renderer
 
 # Size in pixels of a cell in the full-scale human view
 CELL_PIXELS = 32
@@ -78,6 +82,7 @@ class WorldObj:
 
         # Current position of the object
         self.cur_pos = None
+        self.cur_idx=0
 
     def can_overlap(self):
         """Can the agent overlap with this?"""
@@ -369,6 +374,12 @@ class Grid:
         self.height = height
 
         self.grid = [None] * width * height
+        # print("initialized grid")
+        # print(width)
+        # print("width")
+        # print(self.height)
+        # print("height")
+
 
     def __contains__(self, key):
         if isinstance(key, WorldObj):
@@ -951,6 +962,105 @@ class MiniGridEnv(gym.Env):
 
         return pos
 
+    def place_obj_trajectory(self,
+        obj,
+        cur_id=None,
+        trajectory=None,
+        top=None,
+        size=None,
+        reject_fn=None,
+        max_tries=math.inf
+        ):
+        """
+        Place an object at an empty position in the grid
+
+        :param top: top-left position of the rectangle where to place
+        :param size: size of the rectangle where to place
+        :param reject_fn: function to filter out potential positions
+        """
+
+        if top is None:
+            top = (0, 0)
+        else:
+            top = (max(top[0], 0), max(top[1], 0))
+
+        if size is None:
+            size = (self.grid.width, self.grid.height)
+        if cur_id is None:
+            cur_id =0
+
+        if trajectory is None:
+            trajectory = 'Circle'
+
+        num_tries = 0
+
+        old_id = cur_id
+        print(cur_id)
+        while True:
+            # This is to handle with rare cases where rejection sampling
+            # gets stuck in an infinite loop
+            if num_tries > max_tries:
+                raise RecursionError('rejection sampling failed in place_obj')
+
+            num_tries += 1
+            # pos = np.array(())
+
+            cur_id+=1
+            if cur_id>7:
+                cur_id = cur_id %8
+
+            if cur_id == 0:
+                direction = (0,0)
+            elif cur_id == 1:
+                direction = (1,0)
+            elif cur_id == 2:
+                direction = (2,0)
+            elif cur_id == 3:
+                direction = (2,1)
+            elif cur_id == 4:
+                direction = (2,2)
+            elif cur_id == 5:
+                direction = (1,2)
+            elif cur_id == 6:
+                direction = (0,2)
+            elif cur_id == 7:
+                direction = (0,1)
+
+            pos= tuple(map(add, top, direction))
+            print("cur----pose")
+            print(pos)
+
+            # pos = np.array((
+                # self._rand_int(top[0], min(top[0] + size[0], self.grid.width)),
+                # self._rand_int(top[1], min(top[1] + size[1], self.grid.height))
+            # ))
+
+            # Don't place the object on top of another object
+            if self.grid.get(*pos) != None:
+                continue
+
+            # Don't place the object where the agent is
+            if np.array_equal(pos, self.agent_pos):
+                continue
+
+            # Check if there is a filtering criterion
+            if reject_fn and reject_fn(self, pos):
+                continue
+
+            break
+
+        self.grid.set(*pos, obj)
+
+        if obj is not None:
+            obj.init_pos = pos
+            obj.cur_pos = pos
+            obj.cur_idx = cur_id
+
+
+        return pos
+
+
+
     def place_agent(
         self,
         top=None,
@@ -1157,6 +1267,77 @@ class MiniGridEnv(gym.Env):
 
         return obs, reward, done, {}
 
+    def stepv2(self, action):
+        self.step_count += 1
+
+        reward = 0
+        done = False
+
+        # Get the position in front of the agent
+        fwd_pos = self.front_pos
+        cur_pos = self.agent_pos
+
+        # Get the contents of the cell in front of the agent
+        fwd_cell = self.grid.get(*fwd_pos)
+
+        # Rotate left
+        if action == self.actions.left:
+            self.agent_dir -= 1
+            if self.agent_dir < 0:
+                self.agent_dir += 4
+
+        # Rotate right
+        elif action == self.actions.right:
+            self.agent_dir = (self.agent_dir + 1) % 4
+
+        # Move forward
+        elif action == self.actions.forward:
+            if fwd_cell == None or fwd_cell.can_overlap():
+                self.agent_pos = fwd_pos
+            if fwd_cell != None and fwd_cell.type == 'goal':
+                done = True
+                reward = self._reward()
+            if fwd_cell != None and fwd_cell.type == 'lava':
+                done = True
+
+        # Pick up an object or Wait
+        elif action == self.actions.pickup:
+            if fwd_cell and fwd_cell.can_pickup():
+                if self.carrying is None:
+                    self.carrying = fwd_cell
+                    self.carrying.cur_pos = np.array([-1, -1])
+                    self.grid.set(*fwd_pos, None)
+            else:
+                self.agent_pos=cur_pos
+
+
+        # Drop an object
+        elif action == self.actions.drop:
+            if not fwd_cell and self.carrying:
+                self.grid.set(*fwd_pos, self.carrying)
+                self.carrying.cur_pos = fwd_pos
+                self.carrying = None
+
+        # Toggle/activate an object
+        elif action == self.actions.toggle:
+            if fwd_cell:
+                fwd_cell.toggle(self, fwd_pos)
+
+        # Done action (not used by default)
+        elif action == self.actions.done:
+            pass
+
+        else:
+            assert False, "unknown action"
+
+        if self.step_count >= self.max_steps:
+            done = True
+
+        obs = self.gen_obs()
+
+        return obs, reward, done, {}
+
+
     def gen_obs_grid(self):
         """
         Generate the sub-grid observed by the agent.
@@ -1261,18 +1442,28 @@ class MiniGridEnv(gym.Env):
         Render the whole-grid human view
         """
 
+        # input("enter continue")
         if close:
             if self.grid_render:
                 self.grid_render.close()
             return
 
-        if self.grid_render is None or self.grid_render.window is None:
+        # input("enter continue222")
+
+        # if self.grid_render is None or self.grid_render.window is None:
+        if self.grid_render is None:
             from gym_minigrid.rendering import Renderer
+
+            # print("height")
+            # print(self.height)
+            # print("width")
+            # print(self.width)
             self.grid_render = Renderer(
                 self.width * CELL_PIXELS,
                 self.height * CELL_PIXELS,
                 True if mode == 'human' else False
             )
+        
 
         r = self.grid_render
 
@@ -1308,6 +1499,7 @@ class MiniGridEnv(gym.Env):
         f_vec = self.dir_vec
         r_vec = self.right_vec
         top_left = self.agent_pos + f_vec * (self.agent_view_size-1) - r_vec * (self.agent_view_size // 2)
+
 
         # For each cell in the visibility mask
         if highlight:

@@ -88,6 +88,8 @@ class Window(QMainWindow):
             keyName = 'PAGE_DOWN'
         elif e.key() == Qt.Key_Backspace:
             keyName = 'BACKSPACE'
+        elif e.key() == Qt.Key_Home:
+            keyName = 'HOME'
         elif e.key() == Qt.Key_Escape:
             keyName = 'ESCAPE'
 
@@ -99,6 +101,7 @@ class Renderer:
     def __init__(self, width, height, ownWindow=False):
         self.width = width
         self.height = height
+        # print("enter to continue in render")
 
         self.img = QImage(width, height, QImage.Format_RGB888)
         self.painter = QPainter()
