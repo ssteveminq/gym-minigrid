@@ -17,6 +17,10 @@ class ActivePerceptionEnv(MiniGridEnv):
         self.agent_start_pos = agent_start_pos
         self.agent_start_dir = agent_start_dir
 
+        # self.initial_sets=[]
+        # self.initial_sets.append([])
+
+
         # Reduce obstacles if there are too many
         if n_obstacles <= size/2 + 1:
             self.n_obstacles = int(n_obstacles)
@@ -51,9 +55,12 @@ class ActivePerceptionEnv(MiniGridEnv):
 
         # Place obstacles
         self.obstacles = []
+        self.obs_initpos= []
+        
         for i_obst in range(self.n_obstacles):
             self.obstacles.append(Ball())
-            self.place_obj(self.obstacles[i_obst], max_tries=100)
+            init_pos =self.place_obj(self.obstacles[i_obst], max_tries=100)
+            self.obs_initpos.append(init_pos)
 
         self.mission = "get all the objects in field of view"
     def ac_reward(self):
@@ -76,6 +83,7 @@ class ActivePerceptionEnv(MiniGridEnv):
         if action == self.actions.forward and not_clear:
             reward = -1
             done = True
+            print("collision with objects")
             return obs, reward, done, info
 
 
@@ -86,36 +94,40 @@ class ActivePerceptionEnv(MiniGridEnv):
         # print("step")
         ObsinFOV=True
         num_obs = len(self.obstacles)
+
         for i_obst in range(len(self.obstacles)):
             old_pos = self.obstacles[i_obst].cur_pos
-            top = tuple(map(add, old_pos, (-1, -1)))
-            # print("top")
-            # print(old_pos)
-            # print(top)
+            # top = tuple(map(add, old_pos, (-1, -1)))
 
             # print("view")
             # print(bview)
 
+            # print("object i:",i_obst)
+            # obs_pos=self.place_obj_trajectory(self.obstacles[i_obst], self.obstacles[i_obst].cur_idx,'Circle', top=self.obs_initpos[i_obst], size=(4,4), max_tries=100)
+            # self.grid.set(*old_pos, None)
+
             try:
                 # print("trajectory")
-                if num_obs<5:
-                    obs_pos=self.place_obj_trajectory(self.obstacles[i_obst], self.obstacles[i_obst].cur_idx,'Circle', top=top, size=(2,2), max_tries=100)
-                else:
-                    obs_pos=self.place_obj_trajectory(self.obstacles[i_obst], self.obstacles[i_obst].cur_idx,'Circle', top=top, size=(4,4), max_tries=100)
-
+                # obs_pos=self.place_obj_trajectory(self.obstacles[i_obst], self.obstacles[i_obst].cur_idx,'Circle', top=top, size=(2,2), max_tries=100)
+                # if num_obs<4:
+                    # obs_pos=self.place_obj_trajectory(self.obstacles[i_obst], self.obstacles[i_obst].cur_idx,'Circle', top=top, size=(2,2), max_tries=100)
+                # else:
+                    # obs_pos=self.place_obj_trajectory(self.obstacles[i_obst], self.obstacles[i_obst].cur_idx,'Circle', top=top, size=(4,4), max_tries=100)
+                obs_pos=self.place_obj(self.obstacles[i_obst], top=self.obs_initpos[i_obst], size=(4,4), max_tries=100)
                 self.grid.set(*old_pos, None)
-                bview = self.in_view(obs_pos[0], obs_pos[1])
 
             except:
                 pass
             
+            bview = self.in_view(obs_pos[0], obs_pos[1])
             if bview == False:
                ObsinFOV = False
 
                
         if ObsinFOV ==True:
             done = True
-            reward =self.ac_reward() 
+            reward =2 
+            # reward =self.ac_reward() 
 
         return obs, reward, done, info
 
@@ -137,7 +149,7 @@ class ActivePerceptionRandomEnv6x6(ActivePerceptionEnv):
 
 class ActivePerceptionEnv8x8(ActivePerceptionEnv):
     def __init__(self):
-        super().__init__(size=8, agent_start_pos=None, n_obstacles=2)
+        super().__init__(size=8, agent_start_pos=None, n_obstacles=3)
 
 class ActivePerceptionEnv12x12(ActivePerceptionEnv):
     def __init__(self):

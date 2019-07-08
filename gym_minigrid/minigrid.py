@@ -1055,13 +1055,19 @@ class MiniGridEnv(gym.Env):
                     direction = (0,2)
                 elif cur_id == 11:
                     direction = (0,1)
-
+            
+            # print("top:", top[0],top[1])
+            # print("direction: ", direction[0],direction[1])
             pos= tuple(map(add, top, direction))
+            # print("pos:", pos[0],pos[1])
+            # print("pos"])
 
-            if pos[0]>self.grid.width:
-                pos[0]=self.grid.width
-            if pos[1]>self.grid.height:
-                pos[1]=self.grid.height
+            if pos[0]>self.grid.width-1:
+                pos = pos[ :0]+(self.grid.width-1,)+pos[1 : ]
+                # pos[0]=self.grid.width-1
+            if pos[1]>self.grid.height-1:
+                pos = pos[ :1]+(self.grid.height-1,)+pos[2 : ]
+                # pos[1]=self.grid.height-1
             # print("cur----pose")
             # print(pos)
 
@@ -1239,7 +1245,7 @@ class MiniGridEnv(gym.Env):
     def step(self, action):
         self.step_count += 1
 
-        reward = 0.02
+        reward = -0.02
         done = False
 
         # Get the position in front of the agent
