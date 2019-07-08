@@ -676,7 +676,7 @@ class MiniGridEnv(gym.Env):
         max_steps=100,
         see_through_walls=False,
         seed=1337,
-        agent_view_size=7
+        agent_view_size=8
     ):
         # Can't set both grid_size and width/height
         if grid_size:
@@ -995,7 +995,7 @@ class MiniGridEnv(gym.Env):
         num_tries = 0
 
         old_id = cur_id
-        print(cur_id)
+        # print(cur_id)
         while True:
             # This is to handle with rare cases where rejection sampling
             # gets stuck in an infinite loop
@@ -1006,29 +1006,64 @@ class MiniGridEnv(gym.Env):
             # pos = np.array(())
 
             cur_id+=1
-            if cur_id>7:
-                cur_id = cur_id %8
 
-            if cur_id == 0:
-                direction = (0,0)
-            elif cur_id == 1:
-                direction = (1,0)
-            elif cur_id == 2:
-                direction = (2,0)
-            elif cur_id == 3:
-                direction = (2,1)
-            elif cur_id == 4:
-                direction = (2,2)
-            elif cur_id == 5:
-                direction = (1,2)
-            elif cur_id == 6:
-                direction = (0,2)
-            elif cur_id == 7:
-                direction = (0,1)
+            if size[0]<3:
+                if cur_id>7:
+                    cur_id = cur_id %8
+
+                if cur_id == 0:
+                    direction = (0,0)
+                elif cur_id == 1:
+                    direction = (1,0)
+                elif cur_id == 2:
+                    direction = (2,0)
+                elif cur_id == 3:
+                    direction = (2,1)
+                elif cur_id == 4:
+                    direction = (2,2)
+                elif cur_id == 5:
+                    direction = (1,2)
+                elif cur_id == 6:
+                    direction = (0,2)
+                elif cur_id == 7:
+                    direction = (0,1)
+            else:
+                if cur_id>11:
+                    cur_id = cur_id %12
+
+                if cur_id == 0:
+                    direction = (0,0)
+                elif cur_id == 1:
+                    direction = (1,0)
+                elif cur_id == 2:
+                    direction = (2,0)
+                elif cur_id == 3:
+                    direction = (3,0)
+                elif cur_id == 4:
+                    direction = (3,1)
+                elif cur_id == 5:
+                    direction = (3,2)
+                elif cur_id == 6:
+                    direction = (3,3)
+                elif cur_id == 7:
+                    direction = (2,3)
+                elif cur_id == 8:
+                    direction = (1,3)
+                elif cur_id == 9:
+                    direction = (0,3)
+                elif cur_id == 10:
+                    direction = (0,2)
+                elif cur_id == 11:
+                    direction = (0,1)
 
             pos= tuple(map(add, top, direction))
-            print("cur----pose")
-            print(pos)
+
+            if pos[0]>self.grid.width:
+                pos[0]=self.grid.width
+            if pos[1]>self.grid.height:
+                pos[1]=self.grid.height
+            # print("cur----pose")
+            # print(pos)
 
             # pos = np.array((
                 # self._rand_int(top[0], min(top[0] + size[0], self.grid.width)),
@@ -1204,7 +1239,7 @@ class MiniGridEnv(gym.Env):
     def step(self, action):
         self.step_count += 1
 
-        reward = 0
+        reward = 0.02
         done = False
 
         # Get the position in front of the agent
@@ -1498,8 +1533,8 @@ class MiniGridEnv(gym.Env):
         # of the agent's view area
         f_vec = self.dir_vec
         r_vec = self.right_vec
+        # input("enter something")
         top_left = self.agent_pos + f_vec * (self.agent_view_size-1) - r_vec * (self.agent_view_size // 2)
-
 
         # For each cell in the visibility mask
         if highlight:

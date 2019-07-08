@@ -30,7 +30,7 @@ class ActivePerceptionEnv(MiniGridEnv):
         )
         # Allow only 3 actions permitted: left, right, forward
         self.action_space = spaces.Discrete(self.actions.forward + 1)
-        self.reward_range = (-1, 1)
+        self.reward_range = (-1, 2)
 
     def _gen_grid(self, width, height):
         # Create an empty grid
@@ -40,7 +40,7 @@ class ActivePerceptionEnv(MiniGridEnv):
         self.grid.wall_rect(0, 0, width, height)
 
         # Place a goal square in the bottom-right corner
-        self.grid.set(width - 2, height - 2, Goal())
+        # self.grid.set(width - 2, height - 2, Goal())
 
         # Place the agent
         if self.agent_start_pos is not None:
@@ -55,7 +55,10 @@ class ActivePerceptionEnv(MiniGridEnv):
             self.obstacles.append(Ball())
             self.place_obj(self.obstacles[i_obst], max_tries=100)
 
-        self.mission = "get to the green goal square"
+        self.mission = "get all the objects in field of view"
+    def ac_reward(self):
+        
+        return 2 - 0.9 * (self.step_count / self.max_steps)
 
     def step(self, action):
         # Invalid action
@@ -67,6 +70,7 @@ class ActivePerceptionEnv(MiniGridEnv):
         not_clear = front_cell and front_cell.type != 'goal'
 
         obs, reward, done, info = MiniGridEnv.step(self, action)
+        # reward=
 
         # If the agent tries to walk over an obstacle
         if action == self.actions.forward and not_clear:
@@ -74,8 +78,14 @@ class ActivePerceptionEnv(MiniGridEnv):
             done = True
             return obs, reward, done, info
 
+
+        # If the agent can see both objects in FOV of agentto walk over an obstacle
+        
+
         # Update obstacle positions
         # print("step")
+        ObsinFOV=True
+        num_obs = len(self.obstacles)
         for i_obst in range(len(self.obstacles)):
             old_pos = self.obstacles[i_obst].cur_pos
             top = tuple(map(add, old_pos, (-1, -1)))
@@ -83,22 +93,39 @@ class ActivePerceptionEnv(MiniGridEnv):
             # print(old_pos)
             # print(top)
 
+            # print("view")
+            # print(bview)
+
             try:
-                print("trajectory")
-                self.place_obj_trajectory(self.obstacles[i_obst], self.obstacles[i_obst].cur_idx,'Circle', top=top, size=(3,3), max_tries=100)
+                # print("trajectory")
+                if num_obs<5:
+                    obs_pos=self.place_obj_trajectory(self.obstacles[i_obst], self.obstacles[i_obst].cur_idx,'Circle', top=top, size=(2,2), max_tries=100)
+                else:
+                    obs_pos=self.place_obj_trajectory(self.obstacles[i_obst], self.obstacles[i_obst].cur_idx,'Circle', top=top, size=(4,4), max_tries=100)
+
                 self.grid.set(*old_pos, None)
+                bview = self.in_view(obs_pos[0], obs_pos[1])
+
             except:
                 pass
+            
+            if bview == False:
+               ObsinFOV = False
+
+               
+        if ObsinFOV ==True:
+            done = True
+            reward =self.ac_reward() 
 
         return obs, reward, done, info
 
 class ActivePerceptionEnv5x5(ActivePerceptionEnv):
     def __init__(self):
-        super().__init__(size=5, n_obstacles=2)
+        super().__init__(size=5, n_obstacles=1)
 
 class ActivePerceptionRandomEnv5x5(ActivePerceptionEnv):
     def __init__(self):
-        super().__init__(size=5, agent_start_pos=None, n_obstacles=2)
+        super().__init__(size=5, agent_start_pos=None, n_obstacles=1)
 
 class ActivePerceptionEnv6x6(ActivePerceptionEnv):
     def __init__(self):
@@ -106,7 +133,7 @@ class ActivePerceptionEnv6x6(ActivePerceptionEnv):
 
 class ActivePerceptionRandomEnv6x6(ActivePerceptionEnv):
     def __init__(self):
-        super().__init__(size=6, agent_start_pos=None, n_obstacles=3)
+        super().__init__(size=6, agent_start_pos=None, n_obstacles=1)
 
 class ActivePerceptionEnv8x8(ActivePerceptionEnv):
     def __init__(self):
@@ -114,11 +141,11 @@ class ActivePerceptionEnv8x8(ActivePerceptionEnv):
 
 class ActivePerceptionEnv12x12(ActivePerceptionEnv):
     def __init__(self):
-        super().__init__(size=12, agent_start_pos=None, n_obstacles=2)
+        super().__init__(size=12, agent_start_pos=None, n_obstacles=3)
 
 class ActivePerceptionEnv16x16(ActivePerceptionEnv):
     def __init__(self):
-        super().__init__(size=16, n_obstacles=8)
+        super().__init__(size=16, n_obstacles=4)
 
 register(
     id='MiniGrid-Active-Perception-5x5-v0',
