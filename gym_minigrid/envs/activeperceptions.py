@@ -83,7 +83,7 @@ class ActivePerceptionEnv(MiniGridEnv):
         if action == self.actions.forward and not_clear:
             reward = -1
             done = True
-            print("collision with objects")
+            # print("collision with objects")
             return obs, reward, done, info
 
 
@@ -115,15 +115,17 @@ class ActivePerceptionEnv(MiniGridEnv):
                     # obs_pos=self.place_obj_trajectory(self.obstacles[i_obst], self.obstacles[i_obst].cur_idx,'Circle', top=top, size=(4,4), max_tries=100)
                 obs_pos=self.place_obj(self.obstacles[i_obst], top=self.obs_initpos[i_obst], size=(4,4), max_tries=100)
                 self.grid.set(*old_pos, None)
+                bview = self.in_view(obs_pos[0], obs_pos[1])
+                if bview == False:
+                    ObsinFOV = False
 
             except:
                 pass
             
-            bview = self.in_view(obs_pos[0], obs_pos[1])
-            if bview == False:
-               ObsinFOV = False
+            # bview = self.in_view(obs_pos[0], obs_pos[1])
+            # if bview == False:
+               # ObsinFOV = False
 
-               
         if ObsinFOV ==True:
             done = True
             reward =2 
