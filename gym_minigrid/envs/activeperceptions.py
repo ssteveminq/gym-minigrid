@@ -97,7 +97,7 @@ class ActivePerceptionEnv(MiniGridEnv):
 
         for i_obst in range(len(self.obstacles)):
             old_pos = self.obstacles[i_obst].cur_pos
-            # top = tuple(map(add, old_pos, (-1, -1)))
+            top = tuple(map(add, old_pos, (-1, -1)))
 
             # print("view")
             # print(bview)
@@ -113,7 +113,8 @@ class ActivePerceptionEnv(MiniGridEnv):
                     # obs_pos=self.place_obj_trajectory(self.obstacles[i_obst], self.obstacles[i_obst].cur_idx,'Circle', top=top, size=(2,2), max_tries=100)
                 # else:
                     # obs_pos=self.place_obj_trajectory(self.obstacles[i_obst], self.obstacles[i_obst].cur_idx,'Circle', top=top, size=(4,4), max_tries=100)
-                obs_pos=self.place_obj(self.obstacles[i_obst], top=self.obs_initpos[i_obst], size=(4,4), max_tries=100)
+                # obs_pos=self.place_obj(self.obstacles[i_obst], top=self.obs_initpos[i_obst], size=(4,4), max_tries=100)
+                obs_pos=self.place_obj(self.obstacles[i_obst], top=top, size=(4,4), max_tries=100)
                 self.grid.set(*old_pos, None)
                 bview = self.in_view(obs_pos[0], obs_pos[1])
                 if bview == False:
