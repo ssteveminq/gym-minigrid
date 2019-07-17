@@ -86,21 +86,16 @@ class ActivePerceptionEnv(MiniGridEnv):
             # print("collision with objects")
             return obs, reward, done, info
 
-
         # If the agent can see both objects in FOV of agentto walk over an obstacle
-        
 
         # Update obstacle positions
-        # print("step")
         ObsinFOV=True
         num_obs = len(self.obstacles)
+
 
         for i_obst in range(len(self.obstacles)):
             old_pos = self.obstacles[i_obst].cur_pos
             top = tuple(map(add, old_pos, (-1, -1)))
-
-            # print("view")
-            # print(bview)
 
             # print("object i:",i_obst)
             # obs_pos=self.place_obj_trajectory(self.obstacles[i_obst], self.obstacles[i_obst].cur_idx,'Circle', top=self.obs_initpos[i_obst], size=(4,4), max_tries=100)
@@ -114,9 +109,10 @@ class ActivePerceptionEnv(MiniGridEnv):
                 # else:
                     # obs_pos=self.place_obj_trajectory(self.obstacles[i_obst], self.obstacles[i_obst].cur_idx,'Circle', top=top, size=(4,4), max_tries=100)
                 # obs_pos=self.place_obj(self.obstacles[i_obst], top=self.obs_initpos[i_obst], size=(4,4), max_tries=100)
-                obs_pos=self.place_obj(self.obstacles[i_obst], top=top, size=(4,4), max_tries=100)
+                obs_pos=self.place_obj(self.obstacles[i_obst], top=top, size=(3,3), max_tries=100)
                 self.grid.set(*old_pos, None)
                 bview = self.in_view(obs_pos[0], obs_pos[1])
+
                 if bview == False:
                     ObsinFOV = False
 
@@ -160,7 +156,7 @@ class ActivePerceptionEnv12x12(ActivePerceptionEnv):
 
 class ActivePerceptionEnv16x16(ActivePerceptionEnv):
     def __init__(self):
-        super().__init__(size=16, n_obstacles=4)
+        super().__init__(size=16, n_obstacles=3)
 
 register(
     id='MiniGrid-Active-Perception-5x5-v0',
