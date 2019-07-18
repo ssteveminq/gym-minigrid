@@ -64,19 +64,36 @@ class ActivePerceptionEnv(MiniGridEnv):
             self.obs_initpos.append(init_pos)
 
         self.mission = "get all the objects in field of view"
+
+    def getdist_coefficient(self, dist_input):
+        min_depth =0.5
+        min_slope =10
+        max_slope =0.8
+        max_depth =6.0
+
+        Dc= 1/(1+np.exp(-min_slope*(dist_input-min_depth)))*(1/(1+np.exp(max_slope*(dist_input-max_depth))))
+        return Dc
+
     def ac_reward(self):
         obs_dist_sum=0.0
+        r_coeff = 1.0
+
         for i_obst in range(len(self.obstacles)):
             obs_pos = self.obstacles[i_obst].cur_pos
             obs_dist= np.linalg.norm(self.agent_pos-obs_pos)
-            obs_dist_sum+=obs_dist
+            obs_coeff = self.getdist_coefficient(obs_dist)
+            r_coeff *=obs_coeff
 
-        maxdist= self.max_distance()
-        print("acreward"+str(obs_dist_sum))
+            # obs_dist_sum+=obs_dist
 
-        return obs_dist_sum 
+        # maxdist= self.max_distance()
+        # print("r_coeff"+str(r_coeff))
+        # reward = coefficient times maxreward(2)
+        ac_reward = r_coeff*2.0
+        return ac_reward 
         
         # return 2 - 0.9 * (self.step_count / self.max_steps)
+
     def max_distance(self):
 
         print(self)
@@ -149,9 +166,9 @@ class ActivePerceptionEnv(MiniGridEnv):
 
         if ObsinFOV ==True:
             done = True
-            reward =2 
-            # reward =self.ac_reward() 
-        acreward=self.ac_reward()
+            # reward =2 
+            reward =self.ac_reward() 
+        # acreward=self.ac_reward()
 
         return obs, reward, done, info
 
