@@ -1,6 +1,7 @@
 from gym_minigrid.minigrid import *
 from gym_minigrid.register import register
 from operator import add
+import numpy as np
 
 class ActivePerceptionEnv(MiniGridEnv):
     """
@@ -64,8 +65,31 @@ class ActivePerceptionEnv(MiniGridEnv):
 
         self.mission = "get all the objects in field of view"
     def ac_reward(self):
+        obs_dist_sum=0.0
+        for i_obst in range(len(self.obstacles)):
+            obs_pos = self.obstacles[i_obst].cur_pos
+            obs_dist= np.linalg.norm(self.agent_pos-obs_pos)
+            obs_dist_sum+=obs_dist
+
+        maxdist= self.max_distance()
+        print("acreward"+str(obs_dist_sum))
+
+        return obs_dist_sum 
         
-        return 2 - 0.9 * (self.step_count / self.max_steps)
+        # return 2 - 0.9 * (self.step_count / self.max_steps)
+    def max_distance(self):
+
+        print(self)
+        # half_height= self.grid_size/2
+        # half_weight = self.grid_size/2
+        half_height= self.height/2
+        half_width= self.width/2
+        print(half_height)
+        print(half_width)
+        maxdist = np.sqrt(half_height**2+half_width**2)
+        print("max_distance: "+ str(maxdist))
+
+
 
     def step(self, action):
         # Invalid action
@@ -127,6 +151,7 @@ class ActivePerceptionEnv(MiniGridEnv):
             done = True
             reward =2 
             # reward =self.ac_reward() 
+        acreward=self.ac_reward()
 
         return obs, reward, done, info
 
