@@ -166,8 +166,8 @@ class ActivePerceptionEnv(MiniGridEnv):
 
         if ObsinFOV ==True:
             done = True
-            # reward =2 
-            reward =self.ac_reward() 
+            reward =2 
+            # reward =self.ac_reward() 
         # acreward=self.ac_reward()
 
         return obs, reward, done, info
@@ -195,6 +195,11 @@ class ActivePerceptionEnv8x8(ActivePerceptionEnv):
 class ActivePerceptionEnv12x12(ActivePerceptionEnv):
     def __init__(self):
         super().__init__(size=12, agent_start_pos=None, n_obstacles=3)
+
+class ActivePerceptionEnv12x12x4(ActivePerceptionEnv):
+    def __init__(self):
+        super().__init__(size=12, agent_start_pos=None, n_obstacles=4)
+
 
 class ActivePerceptionEnv16x16(ActivePerceptionEnv):
     def __init__(self):
@@ -229,6 +234,12 @@ register(
     id='MiniGrid-Active-Perception-12x12-v0',
     entry_point='gym_minigrid.envs:ActivePerceptionEnv12x12'
 )
+
+register(
+    id='MiniGrid-Active-Perception-12x12x4-v0',
+    entry_point='gym_minigrid.envs:ActivePerceptionEnv12x12x4'
+)
+
 
 register(
     id='MiniGrid-Active-Perception-16x16-v0',
