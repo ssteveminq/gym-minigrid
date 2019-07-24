@@ -194,7 +194,7 @@ class ActivePerceptionEnv8x8(ActivePerceptionEnv):
 
 class ActivePerceptionEnv12x12(ActivePerceptionEnv):
     def __init__(self):
-        super().__init__(size=12, agent_start_pos=None, n_obstacles=3)
+        super().__init__(size=12, agent_start_pos=None, n_obstacles=2)
 
 class ActivePerceptionEnv12x12x4(ActivePerceptionEnv):
     def __init__(self):
