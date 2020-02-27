@@ -17,8 +17,7 @@ def main():
         "--env-name",
         dest="env_name",
         help="gym environment to load",
-        # default='MiniGrid-Active-Perception-12x12-v0'
-        default='MiniGrid-Active-Perception-8x8-v0'
+        default='MiniGrid-MultiAgent-16x16-v0'
     )
     (options, args) = parser.parse_args()
     print("options")
@@ -46,6 +45,7 @@ def main():
             sys.exit(0)
 
         action = 0
+        action2 = 0
 
         print(keyName)
 
@@ -72,7 +72,21 @@ def main():
             print("unknown key %s" % keyName)
             return
 
-        obs, reward, done, info = env.step(action)
+        action2_int= numpy.random.randint(0,3,1)[0]
+        # print("action2")
+        # print(action2)
+
+        if action2_int== 0:
+            action2 = env.actions.left
+        elif action2_int== 1:
+            action2 = env.actions.right
+        elif action2_int== 2:
+            action2 = env.actions.forward
+        else:
+            action2 = env.actions.forward
+
+        
+        obs, reward, done, info = env.step(action,action2)
 
         print('step=%s, reward=%.2f' % (env.step_count, reward))
 

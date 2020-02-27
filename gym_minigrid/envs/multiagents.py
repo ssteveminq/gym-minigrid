@@ -1,22 +1,26 @@
-from gym_minigrid.minigrid import *
+from gym_minigrid.multi_minigrid import *
 from gym_minigrid.register import register
 from operator import add
 import numpy as np
 
-class ActivePerceptionEnv(MiniGridEnv):
+class MultiAgentEnv(MultiMiniGridEnv):
     """
-    Single-room square grid environment with moving obstacles
+    Single-room square grid environment with multi-agent & moving obstacles
     """
 
     def __init__(
             self,
             size=8,
             agent_start_pos=(1, 1),
+            agent2_start_pos=(1, 3),
             agent_start_dir=0,
+            agent2_start_dir=0,
             n_obstacles=4
     ):
         self.agent_start_pos = agent_start_pos
         self.agent_start_dir = agent_start_dir
+        self.agent2_start_pos = agent2_start_pos
+        self.agent2_start_dir = agent2_start_dir
 
         # self.initial_sets=[]
         # self.initial_sets.append([])
@@ -51,19 +55,53 @@ class ActivePerceptionEnv(MiniGridEnv):
         if self.agent_start_pos is not None:
             self.agent_pos = self.agent_start_pos
             self.agent_dir = self.agent_start_dir
+            self.agent2_pos = self.agent2_start_pos
+            self.agent2_dir = self.agent2_start_dir
         else:
-            self.place_agent()
+            self.place_agents()
+            # self.place_multiagent()
+            # self.place_agent()
 
         # Place obstacles
         self.obstacles = []
         self.obs_initpos= []
         
-        for i_obst in range(self.n_obstacles):
-            self.obstacles.append(Ball())
+        for i_obst in range(self.n_obstacles-1):
+            self.obstacles.append(Ball(color='green'))
             init_pos =self.place_obj(self.obstacles[i_obst], max_tries=100)
             self.obs_initpos.append(init_pos)
 
-        self.mission = "get all the objects in field of view"
+        self.obstacles.append(Ball(color='blue'))
+        init_pos =self.place_obj(self.obstacles[self.n_obstacles-1], max_tries=100)
+        self.obs_initpos.append(init_pos)
+
+        self.mission = "Find target objects with multiple robots"
+
+    def place_multiagent(
+        self,
+        top=None,
+        size=None,
+        rand_dir=True,
+        max_tries=math.inf
+    ):
+        """
+        Set the agent's starting point at an empty position in the grid
+        """
+
+        self.agent_pos = None
+        self.agent2_pos = None
+        pos = self.place_obj(None, top, size, max_tries=max_tries)
+        pos2 = self.place_obj(None, top, size, max_tries=max_tries)
+        self.agent_pos = pos
+        self.agent2_pos = pos2
+
+        if rand_dir:
+            self.agent_dir = self._rand_int(0, 4)
+            self.agent_dir2 = self._rand_int(0, 4)
+
+        return [pos, pos2]
+
+
 
     def getdist_coefficient(self, dist_input):
         min_depth =0.5
@@ -108,24 +146,39 @@ class ActivePerceptionEnv(MiniGridEnv):
 
 
 
-    def step(self, action):
+    def step(self, action, action2):
         # Invalid action
         if action >= self.action_space.n:
+            print("action1 - invalid")
+            action = 0
+        if action2 >= self.action_space.n:
+            print("action2 - invalid")
             action = 0
 
         # Check if there is an obstacle in front of the agent
         front_cell = self.grid.get(*self.front_pos)
         not_clear = front_cell and front_cell.type != 'goal'
 
-        obs, reward, done, info = MiniGridEnv.step(self, action)
+        front2_cell = self.grid.get(*self.front2_pos)
+        not_clear2 = front2_cell and front2_cell.type != 'goal'
+
+        obs, reward, done, info = MultiMiniGridEnv.step(self, action,action2)
         # reward=
 
         # If the agent tries to walk over an obstacle
         if action == self.actions.forward and not_clear:
             reward = -1
-            done = True
+            done = False
             # print("collision with objects")
             return obs, reward, done, info
+
+        if action2 == self.actions.forward and not_clear2:
+            reward = -1
+            done = False
+            # print("collision with objects")
+            return obs, reward, done, info
+
+
 
         # If the agent can see both objects in FOV of agentto walk over an obstacle
 
@@ -164,84 +217,83 @@ class ActivePerceptionEnv(MiniGridEnv):
             # if bview == False:
                # ObsinFOV = False
 
-        if ObsinFOV ==True:
-            done = True
-            reward =2 
-            # reward =self.ac_reward() 
-        # acreward=self.ac_reward()
+        # if ObsinFOV ==True:
+            # done = True
+            # reward =2 
+        reward=-1
 
         return obs, reward, done, info
 
-class ActivePerceptionEnv5x5(ActivePerceptionEnv):
+class MultiAgentEnv5x5(MultiAgentEnv):
     def __init__(self):
         super().__init__(size=5, n_obstacles=1)
 
-class ActivePerceptionRandomEnv5x5(ActivePerceptionEnv):
+class MultiAgentRandomEnv5x5(MultiAgentEnv):
     def __init__(self):
         super().__init__(size=5, agent_start_pos=None, n_obstacles=1)
 
-class ActivePerceptionEnv6x6(ActivePerceptionEnv):
+class MultiAgentEnv6x6(MultiAgentEnv):
     def __init__(self):
         super().__init__(size=6, n_obstacles=1)
 
-class ActivePerceptionRandomEnv6x6(ActivePerceptionEnv):
+class MultiAgentRandomEnv6x6(MultiAgentEnv):
     def __init__(self):
         super().__init__(size=6, agent_start_pos=None, n_obstacles=1)
 
-class ActivePerceptionEnv8x8(ActivePerceptionEnv):
+class MultiAgentEnv8x8(MultiAgentEnv):
     def __init__(self):
         super().__init__(size=8, agent_start_pos=None, n_obstacles=3)
 
-class ActivePerceptionEnv12x12(ActivePerceptionEnv):
+class MultiAgentEnv12x12(MultiAgentEnv):
     def __init__(self):
         super().__init__(size=12, agent_start_pos=None, n_obstacles=2)
 
-class ActivePerceptionEnv12x12x4(ActivePerceptionEnv):
+class MultiAgentEnv12x12x4(MultiAgentEnv):
     def __init__(self):
         super().__init__(size=12, agent_start_pos=None, n_obstacles=4)
 
 
-class ActivePerceptionEnv16x16(ActivePerceptionEnv):
+class MultiAgentEnv16x16(MultiAgentEnv):
     def __init__(self):
         super().__init__(size=16, n_obstacles=3)
 
 register(
-    id='MiniGrid-Active-Perception-5x5-v0',
-    entry_point='gym_minigrid.envs:ActivePerceptionEnv5x5'
+    id='MiniGrid-MultiAgent-5x5-v0',
+    entry_point='gym_minigrid.envs:MultiAgentEnv5x5'
 )
 
 register(
-    id='MiniGrid-Active-Perception-Random-5x5-v0',
-    entry_point='gym_minigrid.envs:ActivePerceptionRandomEnv5x5'
+    id='MiniGrid-MultiAgent-Random-5x5-v0',
+    entry_point='gym_minigrid.envs:MultiAgentRandomEnv5x5'
 )
 
 register(
-    id='MiniGrid-Active-Perception-6x6-v0',
-    entry_point='gym_minigrid.envs:ActivePerceptionEnv6x6'
+    id='MiniGrid-MultiAgent-6x6-v0',
+    entry_point='gym_minigrid.envs:MultiAgentEnv6x6'
 )
 
 register(
-    id='MiniGrid-Active-Perception-Random-6x6-v0',
-    entry_point='gym_minigrid.envs:ActivePerceptionRandomEnv6x6'
+    id='MiniGrid-MultiAgent-Random-6x6-v0',
+    entry_point='gym_minigrid.envs:MultiAgentRandomEnv6x6'
 )
 
 register(
-    id='MiniGrid-Active-Perception-8x8-v0',
-    entry_point='gym_minigrid.envs:ActivePerceptionEnv8x8'
+    id='MiniGrid-MultiAgent-8x8-v0',
+    entry_point='gym_minigrid.envs:MultiAgentEnv8x8'
 )
 
 register(
-    id='MiniGrid-Active-Perception-12x12-v0',
-    entry_point='gym_minigrid.envs:ActivePerceptionEnv12x12'
+    id='MiniGrid-MultiAgent-12x12-v0',
+    entry_point='gym_minigrid.envs:MultiAgentEnv12x12'
 )
 
 register(
-    id='MiniGrid-Active-Perception-12x12x4-v0',
-    entry_point='gym_minigrid.envs:ActivePerceptionEnv12x12x4'
+    id='MiniGrid-MultiAgent-12x12x4-v0',
+    entry_point='gym_minigrid.envs:MultiAgentEnv12x12x4'
 )
 
 
 register(
-    id='MiniGrid-Active-Perception-16x16-v0',
-    entry_point='gym_minigrid.envs:ActivePerceptionEnv16x16'
+    id='MiniGrid-MultiAgent-16x16-v0',
+    entry_point='gym_minigrid.envs:MultiAgentEnv16x16'
 )
